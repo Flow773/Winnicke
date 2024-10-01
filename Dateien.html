@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Percy Jackson - Diebe im Olymp</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap" rel="stylesheet">
+    <style>
+
+      /* Stil für das Passwort-Popup */
+        .password-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+        }
+        .password-box {
+            padding: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+        .password-box input {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 1.2em;
+        }
+        .password-box button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 1.2em;
+            background-color: #0077cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .password-box button:hover {
+            background-color: #005fa3;
+        }
+        /* Grundlayout */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('startbild.png');
+            background-size: cover; /* Bild vollständig anzeigen */
+            background-position: center;
+            background-repeat: no-repeat; /* Kein wiederholtes Bild */
+            background-attachment: fixed; /* Hält das Bild beim Scrollen fest */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            overflow-y: scroll; /* Ermöglicht das Scrollen */
+            color: white;
+        }
+
+        /* Überschrift */
+        h1 {
+            margin-top: 50px;
+            font-size: 2.5em;
+            text-align: center;
+            font-family: 'cinzel', sans-serif;
+	color: #FFD700;
+	background-color: rgba(0, 0, 0, 0.5); /* Halbtransparenter schwarzer Hintergrund */
+    padding: 10px 20px; /* Abstand innerhalb der Box */
+    border-radius: 5px; /* Abgerundete Ecken für die Box */
+    display: inline-block; /* Box nur um den Text */
+        }
+
+        /* Container für Audiodateien */
+        .audio-container {
+            width: 90%;
+            max-width: 400px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Titel über den Audiodateien */
+        .audio-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            font-family: 'cinzel', sans-serif;
+	color: #FFD700;
+	background-color: rgba(0, 0, 0, 0.5); /* Halbtransparenter schwarzer Hintergrund */
+    padding: 10px 20px; /* Abstand innerhalb der Box */
+    border-radius: 5px; /* Abgerundete Ecken für die Box */
+    display: inline-block; /* Box nur um den Text */
+        }
+
+        /* Audiodatei-Styling */
+        audio {
+            width: 70%;
+        }
+
+        /* Download-Button */
+        .download-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #0077cc;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .download-button:hover {
+            background-color: #005fa3;
+        }
+    </style>
+</head>
+<body>
+<div id="password-prompt" class="password-prompt">
+        <div class="password-box">
+            <h2>Passwort eingeben</h2>
+            <input type="password" id="password-input" placeholder="Passwort">
+            <button onclick="checkPassword()">Eingeben</button>
+            <p id="error-message" style="color: red; display: none;">Falsches Passwort. Bitte erneut versuchen.</p>
+        </div>
+    </div>
+
+    <!-- Überschrift -->
+    <h1>Percy Jackson - Audiodateien</h1>
+
+    <!-- Audiodatei 1 -->
+    <div class="audio-title">Wir bringen ein Zebra nach Vegas</div>
+    <div class="audio-container">
+        <audio controls>
+            <source src="audio1.m4a" type="audio/mp4">
+            <source src="wir bringen ein zebra nach vegas.mp3" type="audio/mpeg">
+            Dein Browser unterstützt das Audio-Tag nicht.
+        </audio>
+        <a href="wir bringen ein zebra nach vegas.mp3" download class="download-button">Herunterladen</a>
+    </div>
+
+    <!-- Audiodatei 2 -->
+    <div class="audio-title">Wir sehen uns Wasserbetten an</div>
+    <div class="audio-container">
+        <audio controls>
+            <source src="Wir schauen uns Wasserbetten an.m4a" type="audio/mp4">
+            <source src="audio2.mp3" type="audio/mpeg">
+            Dein Browser unterstützt das Audio-Tag nicht.
+        </audio>
+        <a href="Wir schauen uns Wasserbetten an.m4a" download class="download-button">Herunterladen</a>
+    </div>
+
+    <!-- Audiodatei 3 -->
+    <div class="audio-title">Annabeth wird Hundetrainerin</div>
+    <div class="audio-container">
+        <audio controls>
+            <source src="Annabeth wird Hundetrainerin.m4a" type="audio/mp4">
+            <source src="audio3.mp3" type="audio/mpeg">
+            Dein Browser unterstützt das Audio-Tag nicht.
+        </audio>
+        <a href="Annabeth wird Hundetrainerin.m4a" download class="download-button">Herunterladen</a>
+    </div>
+
+    <!-- Audiodatei 4 -->
+    <div class="audio-title">Wir finden die Wahrheit, irgendwie</div>
+    <div class="audio-container">
+        <audio controls>
+            <source src="Wir finden die Wahrheit, irgendwie.m4a" type="audio/mp4">
+            <source src="audio4.mp3" type="audio/mpeg">
+            Dein Browser unterstützt das Audio-Tag nicht.
+        </audio>
+        <a href="Wir finden die Wahrheit, irgendwie.m4a" download class="download-button">Herunterladen</a>
+    </div>
+
+    <!-- Audiodatei 5 -->
+    <div class="audio-title">Ich kämpfe gegen die durchgedrehte Verwandtschaf</div>
+    <div class="audio-container">
+        <audio controls>
+            <source src="Ich kämpfe mit meiner durchgedrehten Verwandtschaf.m4a" type="audio/mp4">
+            <source src="audio5.mp3" type="audio/mpeg">
+            Dein Browser unterstützt das Audio-Tag nicht.
+        </audio>
+        <a href="Ich kämpfe mit meiner durchgedrehten Verwandtschaf.m4a" download class="download-button">Herunterladen</a>
+    </div>
+
+    <!-- Audiodatei 6 -->
+   <div class="audio-title">Ich rechne ab</div>
+<div class="audio-container">
+    <audio controls>
+        <source src="Ich rechne ab.m4a" type="audio/mp4">
+        <source src="audio6.mp3" type="audio/mpeg">
+        Dein Browser unterstützt das Audio-Tag nicht.
+    </audio>
+    <a href="Ich rechne ab.m4a" download class="download-button">Herunterladen</a>
+</div>
+
+    <!-- Audiodatei 7 -->
+    <div class="audio-title">Die Weissagung geht in Erfüllung</div>
+    <div class="audio-container">
+        <audio controls>
+            <source src="Die Weissagung geht in Erfüllung.m4a" type="audio/mp4">
+            <source src="audio7.mp3" type="audio/mpeg">
+            Dein Browser unterstützt das Audio-Tag nicht.
+        </audio>
+        <a href="Die Weissagung geht in Erfüllung.m4a" download class="download-button">Herunterladen</a>
+    </div>
+
+	 <!-- Audiodatei 8 -->
+    <div class="audio-title">Outro</div>
+    <div class="audio-container">
+        <audio controls>
+            <source src="outro.m4a" type="audio/mp4">
+            <source src="audio7.mp3" type="audio/mpeg">
+            Dein Browser unterstützt das Audio-Tag nicht.
+        </audio>
+        <a href="outro.m4a" download class="download-button">Herunterladen</a>
+    </div>
+<script>
+        // Das Passwort, das den Zugriff auf die Seite ermöglicht
+      const correctPassword = "17022022"; // Ersetze "deinPasswort" durch das gewünschte Passwort.
+
+        function checkPassword() {
+            const enteredPassword = document.getElementById('password-input').value.trim(); // Trimmt überflüssige Leerzeichen
+            if (enteredPassword === correctPassword) {
+                document.getElementById('password-prompt').style.display = 'none'; // Versteckt das Passwort-Overlay
+            } else {
+                document.getElementById('error-message').style.display = 'block'; // Zeigt die Fehlermeldung an
+            }
+        }
+    </script>
+</body>
+</html>
