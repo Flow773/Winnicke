@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rezepte</title>
+	<!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js"></script>
+
+  
+    <style>
+        /* Global Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 80%;
+            height: 100%;
+            background-image: url('cozy.webp');
+
+            background-position: center;
+            background-repeat: no-repeat; /* Kein wiederholtes Bild */
+            background-attachment: fixed; /* Hält das Bild beim Scrollen fest */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            overflow-y: scroll; /* Ermöglicht das Scrollen */
+            background-color: black;
+        }
+
+        /* Header - Suche */
+        header {
+            margin: 20px;
+            width: 70%;
+            display: flex;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        #search {
+            width: 60%;
+            padding: 10px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Section - Neues Rezept hinzufügen */
+        #add-recipe {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            width: 100%;
+	    
+            align-items: center;
+            max-width: 600px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #add-recipe h2 {
+            text-align: center;
+        }
+
+        #recipeForm {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #recipeForm input, #recipeForm textarea, #recipeForm button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        #recipeForm button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+
+        #recipeForm button:hover {
+            background-color: #218838;
+        }
+
+        /* Section - Rezepte */
+        #recipes {
+            width: 60%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.8); /* Transparenter Hintergrund nur für Rezepte */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .recipe-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            width: 200px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .recipe-card img {
+            width: 60%;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .recipe-card h3 {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+
+        .recipe-card p {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .recipe-card button {
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .recipe-card button:hover {
+            background-color: #ff4500;
+        }
+
+        /* Stil für den Löschen-Button */
+        .delete-button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .delete-button:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <input type="text" id="search" placeholder="Suche nach Rezepten...">
+    </header>
+
+    <section id="add-recipe">
+        <h2>Neues Rezept hinzufügen</h2>
+        <form id="recipeForm">
+            <input type="text" id="recipeName" placeholder="Rezeptname" required>
+            <input type="file" id="recipeImage" accept="image/*" required>
+            <textarea id="ingredients" placeholder="Zutaten (Komma getrennt)" required></textarea>
+            <textarea id="instructions" placeholder="Anleitung" required></textarea>
+            <input type="file" id="additionalImages" accept="image/*" multiple>
+            <button type="submit">Speichern</button>
+        </form>
+    </section>
+
+    <section id="recipes">
+        <h2>Rezepte</h2>
+        <!-- Hier werden die Rezeptkarten dynamisch eingefügt -->
+    </section>
+
+    <script>
+// Firebase-Konfiguration und Initialisierung
+const firebaseConfig = {
+    apiKey: "AIzaSyB95Yx5g0MG6RhFAx7ht3vL3jccKZz_rBw",
+    authDomain: "rezepteapp-cffaa.firebaseapp.com",
+    projectId: "rezepteapp-cffaa",
+    storageBucket: "rezepteapp-cffaa.appspot.com",
+    messagingSenderId: "19664333341",
+    appId: "1:19664333341:web:7b6ad5d4843c3d0417f4f4"
+};
+
+// Firebase initialisieren
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// Rezept hinzufügen
+document.getElementById("recipeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    console.log("Speichern gestartet...");
+    const recipeName = document.getElementById("recipeName").value;
+    const ingredients = document.getElementById("ingredients").value.split(",");
+    const instructions = document.getElementById("instructions").value;
+    const imageFile = document.getElementById("recipeImage").files[0];
+
+    if (!recipeName || !ingredients || !instructions || !imageFile) {
+        console.log("Bitte alle Felder ausfüllen");
+        return;
+    }
+
+    try {
+        console.log("Bild wird hochgeladen...");
+        const imageRef = storage.ref('recipes/' + imageFile.name);
+        await imageRef.put(imageFile);
+        const imageUrl = await imageRef.getDownloadURL();
+
+        console.log("Rezept wird gespeichert...");
+        await db.collection("recipes").add({
+            recipeName,
+            ingredients,
+            instructions,
+            imageUrl,
+            cooked: false,
+            ratings: []
+        });
+
+        console.log("Rezept erfolgreich gespeichert!");
+        document.getElementById("recipeForm").reset();
+        loadRecipes(); // Rezepte nach dem Speichern laden
+    } catch (error) {
+        console.error("Fehler beim Speichern des Rezepts:", error);
+    }
+});
+
+// Rezepte laden
+async function loadRecipes() {
+    console.log("Rezepte werden geladen...");
+    const recipesContainer = document.getElementById("recipes");
+    recipesContainer.innerHTML = ""; // Container leeren
+    try {
+        const querySnapshot = await db.collection("recipes").get();
+        querySnapshot.forEach((doc) => {
+            const recipe = doc.data();
+            recipesContainer.innerHTML += `
+                <div class="recipe-card">
+                    <img src="${recipe.imageUrl}" alt="${recipe.recipeName}">
+                    <h3>${recipe.recipeName}</h3>
+                    <p>Zutaten: ${recipe.ingredients.join(", ")}</p>
+                    <p>Anleitung: ${recipe.instructions}</p>
+                    <button onclick="markAsCooked('${doc.id}')">Als gekocht markieren</button>
+                    <button onclick="deleteRecipe('${doc.id}')" class="delete-button">Löschen</button>
+                </div>
+            `;
+        });
+        console.log("Rezepte erfolgreich geladen.");
+    } catch (error) {
+        console.error("Fehler beim Laden der Rezepte:", error);
+    }
+}
+
+// Rezept als "gekocht" markieren
+async function markAsCooked(id) {
+    console.log(`Rezept ${id} wird als gekocht markiert...`);
+    try {
+        await db.collection("recipes").doc(id).update({
+            cooked: true
+        });
+        loadRecipes(); // Aktualisierte Rezepte laden
+    } catch (error) {
+        console.error("Fehler beim Markieren als gekocht:", error);
+    }
+}
+
+// Rezept löschen
+async function deleteRecipe(id) {
+    console.log(`Rezept ${id} wird gelöscht...`);
+    try {
+        await db.collection("recipes").doc(id).delete();
+        loadRecipes(); // Aktualisierte Rezepte laden
+    } catch (error) {
+        console.error("Fehler beim Löschen des Rezepts:", error);
+    }
+}
+
+// Suche nach Rezepten
+document.getElementById("search").addEventListener("input", function() {
+    const searchTerm = this.value.toLowerCase();
+    document.querySelectorAll(".recipe-card").forEach((card) => {
+        const recipeName = card.querySelector("h3").textContent.toLowerCase();
+        card.style.display = recipeName.includes(searchTerm) ? "block" : "none";
+    });
+});
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true; // Nur für Entwicklung
+    }
+  }
+}
+// Rezepte laden
+async function loadRecipes() {
+    const recipesContainer = document.getElementById("recipes");
+    recipesContainer.innerHTML = "";
+    const querySnapshot = await db.collection("recipes").get();
+    querySnapshot.forEach((doc) => {
+        const recipe = doc.data();
+        recipesContainer.innerHTML += `
+            <div class="recipe-card">
+                <img src="${recipe.imageUrl}" alt="${recipe.recipeName}">
+                <h3>${recipe.recipeName}</h3>
+                <p>Zutaten: ${recipe.ingredients.join(", ")}</p>
+                <p>Anleitung: ${recipe.instructions}</p>
+                <button onclick="markAsCooked('${doc.id}')">Als gekocht markieren</button>
+            </div>
+        `;
+    });
+}
+
+// Rezept als "gekocht" markieren
+async function markAsCooked(id) {
+    await db.collection("recipes").doc(id).update({
+        cooked: true
+    });
+    loadRecipes();
+}
+
+// Suche nach Rezepten
+document.getElementById("search").addEventListener("input", function() {
+    const searchTerm = this.value.toLowerCase();
+    document.querySelectorAll(".recipe-card").forEach((card) => {
+        const recipeName = card.querySelector("h3").textContent.toLowerCase();
+        card.style.display = recipeName.includes(searchTerm) ? "block" : "none";
+    });
+});
+
+// Rezepte beim Laden der Seite anzeigen
+loadRecipes();
+	</script>
+</body>
+</html>
+
