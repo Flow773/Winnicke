@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rezepte-App</title>
+    <style>
+        .screen {
+            display: none;
+            width: 100%;
+            padding: 20px;
+        }
+        .screen.active {
+            display: block;
+        }
+        .recipe-card {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .recipe-details {
+            margin-top: 10px;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            display: none;
+        }
+        .delete-button, .status-button {
+            margin: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        /* Symbol für gekochte Rezepte */
+        .cooked-icon {
+            color: green;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        /* Plus-Button für Rückkehr zum Hinzufügen */
+        .plus-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: #28a745;
+            cursor: pointer;
+        }
+        /* Modal für vergrößerte Bildanzeige */
+        #imageModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        #modalImage {
+            max-width: 90%;
+            max-height: 90%;
+        }
+        #imageModal span {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+
+    <!-- Neue Importe mit 'compat' -->
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
+</head>
+<body>
+    <!-- Erster Bildschirm -->
+    <div id="first-screen" class="screen active">
+        <h1>Neues Rezept hinzufügen</h1>
+        <form id="recipeForm">
+            <input type="text" id="recipeName" placeholder="Rezeptname" required><br><br>
+            <textarea id="ingredients" placeholder="Zutaten (eine Zutat pro Zeile)"></textarea><br><br>
+            <textarea id="instructions" placeholder="Zubereitungsanweisung"></textarea><br><br>
+            <label>Foto des Gerichts:</label><br>
+            <input type="file" id="dishImage" accept="image/*"><br><br>
+            <label>Foto für Zutaten:</label><br>
+            <input type="file" id="ingredientsImage" accept="image/*"><br><br>
+            <label>Foto für Zubereitung:</label><br>
+            <input type="file" id="instructionsImage" accept="image/*"><br><br>
+            <button type="button" onclick="saveRecipe()">Rezept speichern</button>
+        </form>
+        <button onclick="switchToSecondScreen()">Zu Rezepten wechseln</button>
+    </div>
+
+    <!-- Zweiter Bildschirm -->
+    <div id="second-screen" class="screen">
+        <h1>Gespeicherte Rezepte
+            <span class="plus-icon" onclick="switchToFirstScreen()">&#43;</span>
+        </h1>
+        <input type="text" id="searchInput" placeholder="Suche nach Name oder Zutaten" oninput="loadRecipes()"><br><br>
+        <label>
+            <input type="checkbox" id="filterCooked" onclick="loadRecipes()">
+            Nur gekochte anzeigen
+        </label>
+        <label>
+            <input type="checkbox" id="filterNotCooked" onclick="loadRecipes()">
+            Nur ungekochte anzeigen
+        </label>
+        <div id="recipesList"></div>
+    </div>
+
+    <!-- Modal zum Vergrößern der Bilder -->
+    <div id="imageModal">
+        <img id="modalImage">
+        <span onclick="closeModal()">&#10006;</span>
+    </div>
+
+    <script>
+       // Firebase konfigurieren und initialisieren
+const firebaseConfig = {
+
+  apiKey: "AIzaSyB95Yx5g0MG6RhFAx7ht3vL3jccKZz_rBw",
+
+  authDomain: "rezepteapp-cffaa.firebaseapp.com",
+
+  projectId: "rezepteapp-cffaa",
+
+  storageBucket: "rezepteapp-cffaa.firebasestorage.app",
+
+  messagingSenderId: "19664333341",
+
+  appId: "1:19664333341:web:7b6ad5d4843c3d0417f4f4"
+
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+       
+
+        // Funktion, um zum zweiten Bildschirm zu wechseln und Rezepte zu laden
+        function switchToSecondScreen() {
+            document.getElementById("first-screen").classList.remove("active");
+            document.getElementById("second-screen").classList.add("active");
+            loadRecipes();
+        }
+
+        // Funktion, um zum ersten Bildschirm zurückzukehren
+        function switchToFirstScreen() {
+            document.getElementById("second-screen").classList.remove("active");
+            document.getElementById("first-screen").classList.add("active");
+        }
+
+        // Rezept speichern und in Firestore hinzufügen
+        async function saveRecipe() {
+            const name = document.getElementById("recipeName").value;
+            const ingredients = document.getElementById("ingredients").value.split("\n").filter(i => i.trim());
+            const instructions = document.getElementById("instructions").value;
+            const dishImageFile = document.getElementById("dishImage").files[0];
+            const ingredientsImageFile = document.getElementById("ingredientsImage").files[0];
+            const instructionsImageFile = document.getElementById("instructionsImage").files[0];
+
+            if (!name) {
+                alert("Bitte gib einen Rezeptnamen ein.");
+                return;
+            }
+
+            const recipe = {
+                name: name.trim(),
+                ingredients,
+                instructions,
+                cooked: false, 
+                rating: null 
+            };
+
+            const readers = [
+                { file: dishImageFile, property: "dishImage" },
+                { file: ingredientsImageFile, property: "ingredientsImage" },
+                { file: instructionsImageFile, property: "instructionsImage" },
+            ];
+
+            let loadCounter = 0;
+
+            // Bilder hochladen und URLs speichern
+            if (dishImageFile) {
+                const dishImageUrl = await uploadImage(dishImageFile);
+                recipe.dishImage = dishImageUrl;
+            }
+            if (ingredientsImageFile) {
+                const ingredientsImageUrl = await uploadImage(ingredientsImageFile);
+                recipe.ingredientsImage = ingredientsImageUrl;
+            }
+            if (instructionsImageFile) {
+                const instructionsImageUrl = await uploadImage(instructionsImageFile);
+                recipe.instructionsImage = instructionsImageUrl;
+            }
+
+            await db.collection("recipes").add(recipe); // Rezept in Firestore speichern
+            document.getElementById("recipeForm").reset();
+            alert("Rezept gespeichert!");
+            loadRecipes();
+        }
+
+        // Hilfsfunktion zum Hochladen von Bildern zu Firebase Storage
+        async function uploadImage(file) {
+            const storageRef = storage.ref(`recipes/${file.name}`);
+            await storageRef.put(file);
+            return await storageRef.getDownloadURL();
+        }
+
+        // Rezepte aus Firestore laden
+        async function loadRecipes() {
+            const recipesList = document.getElementById("recipesList");
+            recipesList.innerHTML = "";
+            const querySnapshot = await db.collection("recipes").get();
+
+            querySnapshot.forEach((doc) => {
+                const recipe = doc.data();
+                const recipeCard = document.createElement("div");
+                recipeCard.className = "recipe-card";
+
+                recipeCard.innerHTML = `
+                    <div><strong>${recipe.name}</strong></div>
+                    ${recipe.dishImage ? `<img src="${recipe.dishImage}" alt="Gericht" width="50" onclick="openModal('${recipe.dishImage}')">` : ""}
+                    ${recipe.cooked ? '<span class="cooked-icon">&#10004;</span>' : ''}
+                    ${recipe.rating ? ` - Bewertung: ${recipe.rating}/5` : ''}
+                    <button onclick="toggleRecipeDetails('${doc.id}')">Details anzeigen</button>
+                `;
+
+                const recipeDetails = document.createElement("div");
+                recipeDetails.className = "recipe-details";
+                recipeDetails.id = `recipe-details-${doc.id}`;
+                recipeDetails.style.display = "none";
+                recipeDetails.innerHTML = `
+                    ${recipe.ingredientsImage ? `<img src="${recipe.ingredientsImage}" alt="Zutaten" width="50" onclick="openModal('${recipe.ingredientsImage}')"><br>` : ""}
+                    <strong>Zutaten:</strong><br>${recipe.ingredients.join("<br>")}<br><br>
+                    ${recipe.instructionsImage ? `<img src="${recipe.instructionsImage}" alt="Zubereitung" width="50" onclick="openModal('${recipe.instructionsImage}')"><br>` : ""}
+                    <strong>Zubereitung:</strong><br>${recipe.instructions}
+                `;
+
+                recipeCard.appendChild(recipeDetails);
+                recipesList.appendChild(recipeCard);
+            });
+        }
+
+        // Rezeptdetails ein-/ausblenden
+        function toggleRecipeDetails(id) {
+            const details = document.getElementById(`recipe-details-${id}`);
+            details.style.display = details.style.display === "block" ? "none" : "block";
+        }
+
+        // Bild im Modal anzeigen
+        function openModal(imageSrc) {
+            document.getElementById("modalImage").src = imageSrc;
+            document.getElementById("imageModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("imageModal").style.display = "none";
+        }
+
+        // Rezepte beim Laden der Seite anzeigen
+        loadRecipes();
+    </script>
+</body>
+</html>
